@@ -43,6 +43,8 @@ pip install -e .
 ## Usage
 
 ```python
-from chatbot_tools import MySQL
+from mmpy_tools import MySQL
+from dotenv import load_dotenv
+
 help(MySQL)
 ```

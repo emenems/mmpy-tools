@@ -8,7 +8,7 @@ help(MySQL)
 
 import os
 import pandas as pd
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 
 #%% MySQL class
 class MySQL:
@@ -67,7 +67,7 @@ class MySQL:
             dbuser = os.environ.get("DB_USER","root")
 
         self.engine = create_engine(f"mysql+pymysql://{dbuser}:{dbpassword}@{dbhost}/{dbname}")
-        self.engine.connect()
+        self.engine.connect() # for test of connection only
         self.dbname = dbname
 
     def create_db(self, dbname: str = "", drop: bool =True) -> None:
@@ -80,10 +80,14 @@ class MySQL:
         """
         if drop is True:
             try:
-                self.engine.execute(f"DROP DATABASE `{dbname}`;")
+                with self.engine.connect() as conn:
+                    conn.execute(text(f"DROP DATABASE `{dbname}`;"))
+                    conn.commit()
             except:
                 pass
-        self.engine.execute(f"CREATE DATABASE `{dbname}`;")
+        with self.engine.connect() as conn:
+            conn.execute(text(f"CREATE DATABASE `{dbname}`;"))
+            conn.commit()
 
     def create_table(self, table_name: str, table_def: dict, drop: bool = True) -> None:
         """Aux function to create the database table from definition stored in a DataFrame
@@ -106,14 +110,18 @@ class MySQL:
         # Remove the table first (if exists)
         if drop is True:
             try:
-                self.engine.execute(f"DROP TABLE IF EXISTS `{table_name}`;")
+                with self.engine.connect() as conn:
+                    conn.execute(text(f"DROP TABLE IF EXISTS `{table_name}`;"))
+                    conn.commit()
             except:
                 pass
         sql = f"CREATE TABLE {table_name} ("
         for tablename, definition in table_def.items():
             sql += f"{tablename} {definition},"
         sql = sql[0:-1] + ");"
-        self.engine.execute(sql)
+        with self.engine.connect() as conn:
+            conn.execute(text(sql))
+            conn.commit()
 
     def execute_sql_file(self, filename: str) -> None:
         """Execute SQL command stored in a formated file
@@ -131,10 +139,12 @@ class MySQL:
         """
         with open(filename,"r") as fid:
             sql = fid.read()
-        for command in sql.split(";"):
-            command = command.replace("\n","").replace("\t","")
-            if len(command) > 4:
-                self.engine.execute(command)
+        with self.engine.connect() as conn:
+            for command in sql.split(";"):
+                command = command.replace("\n","").replace("\t","")
+                if len(command) > 4:
+                    conn.execute(text(command))
+            conn.commit()
 
     def query_table(self,table_name: str) -> pd.DataFrame:
         """Query data to dataframe
@@ -154,7 +164,9 @@ class MySQL:
         Arguments:
             *sql*: sql command
         """
-        return pd.read_sql_query(sql, self.engine)
+        with self.engine.connect().execution_options(autocommit=True) as conn:
+            query = conn.execute(text(sql))         
+        return pd.DataFrame(query.fetchall())
 
     def insert_table(self, df: pd.DataFrame, table_name: str, truncate: bool = False) -> None:
         """Insert values from dataframe to given table
@@ -180,15 +192,34 @@ class MySQL:
             self.insert_table(df,table,truncate)
         """
         if truncate is True:
-            self.engine.execute(f"TRUNCATE TABLE `{table_name}`")
+            self.truncate_table(table_name)
+        
+        with self.engine.connect() as conn:
+            # alternative: df.to_sql("testit",DB.engine,if_exists="append",index=False)
+            cols = "(`"+"`,`".join(df.columns)+"`)"
+            df = df.replace("'","''",regex=True)
+            for i in range(df.shape[0]):
+                values = "','".join([f'{i}' for i in df.iloc[i].values])
+                query = f"INSERT INTO `{table_name}` {cols} VALUES ('{values}');"
+                conn.execute(text(query.replace("'nan'","NULL").replace("'None'","NULL")))
+            conn.commit()
+        
+    def truncate_table(self, table: str) -> None:
+        """Truncate table
 
-        # pandas.to_sql does not for for some reason. Insert manually
-        cols = "(`"+"`,`".join(df.columns)+"`)"
-        df = df.replace("'","''",regex=True)
-        for i in range(df.shape[0]):
-            values = "','".join([f'{i}' for i in df.iloc[i].values])
-            query = f"INSERT INTO `{table_name}` {cols} VALUES ('{values}');"
-            self.engine.execute(query.replace("'nan'","NULL").replace("'None'","NULL"))
+        Arguments:
+            *table*: name of the table
+
+        Example
+        -------
+        Truncate table::
+
+            m = MySQL("backend_admin")
+            m.truncate_table("table")
+        """
+        with self.engine.connect() as conn:
+            conn.execute(text(f"TRUNCATE TABLE `{table}`;"))
+            conn.commit()
 
     def delete_id(self, id: str, table: str) -> None:
         """Delete for from a table where ID equals give value
@@ -224,4 +255,6 @@ class MySQL:
             delete_where("`id` = '10'","files")
         ```
         """
-        self.engine.execute(f"DELETE FROM `{table}` WHERE {condition}")
+        with self.engine.connect() as conn:
+            conn.execute(text(f"DELETE FROM `{table}` WHERE {condition}"))
+            conn.commit()
