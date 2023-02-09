@@ -1,0 +1,16 @@
+pandas
+numpy
+pytest
+SQLAlchemy
+PyMySQL
+python-dotenv
+cryptography
+# For CI/CD pipeline only
+coverage
+pytest-cov
+anybadge
+pylint-exit
+# For auto-docs creation
+sphinx
+sphinx-rtd-theme
+m2r2
