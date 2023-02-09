@@ -1,6 +1,6 @@
 # MMpy Tools
 
-Collection of tools I used reapatedly in Python (but they do not deserver a stand-alone repo :)
+Collection of tools I used reapatedly in Python (but they do not deserve a stand-alone repo :)
 
 ## Classes
 
