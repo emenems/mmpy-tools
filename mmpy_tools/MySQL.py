@@ -7,6 +7,7 @@ help(MySQL)
 """
 
 import os
+from collections.abc import Iterable
 import pandas as pd
 from sqlalchemy import create_engine, text
 
@@ -137,7 +138,7 @@ class MySQL:
             DB.execute_sql_file(filename)
 
         """
-        with open(filename,"r") as fid:
+        with open(filename, "r", encoding="utf-8") as fid:
             sql = fid.read()
         with self.engine.connect() as conn:
             for command in sql.split(";"):
@@ -168,11 +169,11 @@ class MySQL:
             query = conn.execute(text(sql))         
         return pd.DataFrame(query.fetchall())
 
-    def insert_table(self, df: pd.DataFrame, table_name: str, truncate: bool = False) -> None:
+    def insert_table(self, df_insert: pd.DataFrame, table_name: str, truncate: bool=False) -> None:
         """Insert values from dataframe to given table
 
         Arguments:
-            *df*: dataframe with column names identical with the database
+            *df_insert*: dataframe with column names identical with the database
 
             *table_name*: table for insertion
 
@@ -183,27 +184,27 @@ class MySQL:
         Insert own dataframe::
 
             import pandas as pd
-            df = pd.DataFrame({"id":[0,1],
+            df_insert = pd.DataFrame({"id":[0,1],
                             "type":["parts","phrase"],
                             "message":["ahoj","Office Management"]})
             table = "keywords"
             truncate = True
 
-            self.insert_table(df,table,truncate)
+            self.insert_table(df_insert,table,truncate)
         """
         if truncate is True:
             self.truncate_table(table_name)
-        
+
         with self.engine.connect() as conn:
-            # alternative: df.to_sql("testit",DB.engine,if_exists="append",index=False)
-            cols = "(`"+"`,`".join(df.columns)+"`)"
-            df = df.replace("'","''",regex=True)
-            for i in range(df.shape[0]):
-                values = "','".join([f'{i}' for i in df.iloc[i].values])
+            # alternative: df_insert.to_sql("testit",DB.engine,if_exists="append",index=False)
+            cols = "(`"+"`,`".join(df_insert.columns)+"`)"
+            df_insert = df_insert.replace("'","''",regex=True)
+            for i in range(df_insert.shape[0]):
+                values = "','".join([f'{i}' for i in df_insert.iloc[i].values])
                 query = f"INSERT INTO `{table_name}` {cols} VALUES ('{values}');"
                 conn.execute(text(query.replace("'nan'","NULL").replace("'None'","NULL")))
             conn.commit()
-        
+
     def truncate_table(self, table: str) -> None:
         """Truncate table
 
@@ -221,13 +222,15 @@ class MySQL:
             conn.execute(text(f"TRUNCATE TABLE `{table}`;"))
             conn.commit()
 
-    def delete_id(self, id: str, table: str) -> None:
-        """Delete for from a table where ID equals give value
+    def delete_id(self, id_values: str, table: str, id_column: str = "id") -> None:
+        """Delete entries from a table where ID equals give value
 
         Arguments:
-            *id*: ID to be deleted
+            *id_values*: ID to be deleted. Either integer or list of integers/strings
 
             *table*: name of the table
+
+            *id_column*: name of the ID column, by default 'id'
 
         Example
         -------
@@ -237,7 +240,10 @@ class MySQL:
             m.delete_id(10,"files")
         ```
         """
-        self.delete_where(f"((`id` = '{id}'))",table)
+        if not isinstance(id_values, Iterable) or isinstance(id_values, str):
+            id_values = [id_values]
+        for id_value in id_values:
+            self.delete_where(f"((`{id_column}` = '{id_value}'))",table)
 
     def delete_where(self, condition: str, table: str) -> None:
         """Delete for from a table where give condition is met
