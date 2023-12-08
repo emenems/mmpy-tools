@@ -11,12 +11,14 @@ Collection of tools I used reapatedly in Python (but they do not deserve a stand
 ### Create python virtual environment
 
 #### Linux
+
 ```bash
 python3 -m venv env
 source env/Scripts/activate
 ```
 
 #### Windows
+
 ```bash
 python -m venv env
 source env/Scripts/activate
@@ -33,6 +35,9 @@ pip install -r requirements.txt
 
 # OR only package
 pip install -e .
+
+# OR directly from github
+pip install -e git+https://github.com/emenems/mmpy-tools.git#egg=mmpy_tools
 ```
 
 

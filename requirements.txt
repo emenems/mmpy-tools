@@ -4,7 +4,6 @@ pytest
 SQLAlchemy
 PyMySQL
 python-dotenv
-cryptography
 # For CI/CD pipeline only
 coverage
 pytest-cov

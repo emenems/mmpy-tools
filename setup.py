@@ -10,14 +10,13 @@ INSTALL_REQUIRES = [
     'pandas',
     'SQLAlchemy',
     'PyMySQL',
-    'python-dotenv',
-    'cryptography'
+    'python-dotenv'
 ]
 
 
 setup(
     name = "mmpy_tools",
-    version = "0.2.1",
+    version = "0.2.2",
     description = "Collection of tools I used reapatedly in Python",
     author = "Michal Mikolaj",
     packages = find_packages(),
