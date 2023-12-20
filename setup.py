@@ -16,7 +16,7 @@ INSTALL_REQUIRES = [
 
 setup(
     name = "mmpy_tools",
-    version = "0.2.2",
+    version = "0.2.3",
     description = "Collection of tools I used reapatedly in Python",
     author = "Michal Mikolaj",
     packages = find_packages(),
