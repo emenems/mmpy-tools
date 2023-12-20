@@ -246,7 +246,7 @@ class MySQL:
             self.delete_where(f"((`{id_column}` = '{id_value}'))",table)
 
     def delete_where(self, condition: str, table: str) -> None:
-        """Delete for from a table where give condition is met
+        """Delete from a table where give condition is met
 
         Arguments:
             *condition*: full where condition
@@ -264,3 +264,52 @@ class MySQL:
         with self.engine.connect() as conn:
             conn.execute(text(f"DELETE FROM `{table}` WHERE {condition}"))
             conn.commit()
+    
+    def update_where(self, condition: str, table: str, column: str, new_value: str) -> None:
+        """Update a table where give condition is met
+
+        Arguments:
+            *condition*: full where condition
+
+            *table*: name of the table
+
+            *column*: column to be updated
+
+            *new_value*: new values to be updated (replacing the old value)
+
+        Example
+        -------
+        For: UPDATE `files` SET `file_name` = 'new.txt' WHERE `id` = '10';
+
+            update_where("`id` = '10'", "files", "file_name", "new.txt")
+        ```
+        """
+        with self.engine.connect() as conn:
+            conn.execute(text(f"UPDATE `{table}` SET `{column}` = '{new_value}' WHERE {condition}"))
+            conn.commit()
+
+    def update_id(self, id_value: str, table: str, column: str, new_value: str, id_column: str = "id") -> None:
+        """Update entriy from a table where ID equals give value
+
+        Arguments:
+            *id_value*: ID to be updated. Either integer or list of integers/strings
+
+            *table*: name of the table
+
+            *column*: column to be updated
+
+            *new_value*: new values to be updated (replacing the old value)
+
+            *id_column*: name of the ID column, by default 'id'
+
+        Example
+        -------
+        Replace entry where ID column = 10::
+
+            m = MySQL("backend_admin")
+            m.update_id(10, "files", "file_name", "new.txt")
+        ```
+        """
+        self.update_where(
+            f"`{id_column}` = '{id_value}'", table, column, new_value
+        )
