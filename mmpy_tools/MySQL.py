@@ -124,7 +124,7 @@ class MySQL:
             conn.execute(text(sql))
             conn.commit()
 
-    def exceute_sql(self, query: str) -> None:
+    def execute_sql(self, query: str) -> None:
         """Execute SQL command. Ideal for UPDATE, DELETE, INSERT with multiple
         conditions or SET values (methods like update_where do not support
         changes on multiple columns).
