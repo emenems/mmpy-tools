@@ -49,7 +49,10 @@ pip install -e git+https://github.com/emenems/mmpy-tools.git#egg=mmpy_tools
 
 ```python
 from mmpy_tools import MySQL
+
+# In case the ENV valriables are stored in .env file:
 from dotenv import load_dotenv
+load_dotenv()
 
 help(MySQL)
 ```
