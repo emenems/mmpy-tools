@@ -124,6 +124,27 @@ class MySQL:
             conn.execute(text(sql))
             conn.commit()
 
+    def exceute_sql(self, query: str) -> None:
+        """Execute SQL command. Ideal for UPDATE, DELETE, INSERT with multiple
+        conditions or SET values (methods like update_where do not support
+        changes on multiple columns).
+        Does not return anyting.
+    
+        Arguments:
+            *query*: valid (full) SQL query
+
+        Example
+        -------
+        Update: UPDATE `files` SET `file_name` = 'new.txt', `file_suffix` = 'txt' WHERE `id` = '10';
+
+            query = "UPDATE `files` SET `file_name` = 'new.txt', `file_suffix` = 'txt' WHERE `id` = '10';"
+            DB.execute_sql(query)
+
+        """
+        with self.engine.connect() as conn:
+            conn.execute(text(query))
+            conn.commit()
+
     def execute_sql_file(self, filename: str) -> None:
         """Execute SQL command stored in a formated file
 
